@@ -2,8 +2,8 @@ mod = angular.module('infinite-scroll', [])
 
 mod.value('THROTTLE_MILLISECONDS', null)
 
-mod.directive 'infiniteScroll', ['$rootScope', '$window', '$interval', 'THROTTLE_MILLISECONDS', \
-                                  ($rootScope, $window, $interval, THROTTLE_MILLISECONDS) ->
+mod.directive 'infiniteScroll', ['$rootScope', '$window', '$interval', '$timeout', 'THROTTLE_MILLISECONDS', \
+                                  ($rootScope, $window, $interval, $timeout, THROTTLE_MILLISECONDS) ->
   scope:
     infiniteScroll: '&'
     infiniteScrollContainer: '='
@@ -20,6 +20,8 @@ mod.directive 'infiniteScroll', ['$rootScope', '$window', '$interval', 'THROTTLE
     checkWhenEnabled = null
     container = null
     immediateCheck = true
+    immediateCheckUntilEnd = false
+    immediateCheckFinished = false
     useDocumentBottom = false
     unregisterEventListener = null
 
@@ -71,6 +73,8 @@ mod.directive 'infiniteScroll', ['$rootScope', '$window', '$interval', 'THROTTLE
           else
             scope.$apply(scope.infiniteScroll)
       else
+        if immediateCheck && !immediateCheckFinished
+          immediateCheckFinished = true
         checkWhenEnabled = false
 
     # The optional THROTTLE_MILLISECONDS configuration value specifies
@@ -198,8 +202,17 @@ mod.directive 'infiniteScroll', ['$rootScope', '$window', '$interval', 'THROTTLE
     if attrs.infiniteScrollImmediateCheck?
       immediateCheck = scope.$eval(attrs.infiniteScrollImmediateCheck)
 
-    $interval (->
-      if immediateCheck
+    # infinte-scoll-immediate-check-until-end runs expression passed
+    # on infinite-scroll until the whole container wont be filled up with data
+    # Note that this works only when infinte-scoll-immediate-check is set to true
+    if attrs.infiniteScrollImmediateCheckUntilEnd?
+      immediateCheckUntilEnd = true
+
+    makeImmediateCheck = ->
+      if immediateCheck && !immediateCheckFinished
         handler()
-    ), 0, 1
+        if immediateCheckUntilEnd
+          $timeout(makeImmediateCheck, 0)
+    
+    $timeout(makeImmediateCheck, 0)
 ]

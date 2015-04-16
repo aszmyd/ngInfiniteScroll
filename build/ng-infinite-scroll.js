@@ -1,4 +1,4 @@
-/* ng-infinite-scroll - v1.2.0 - 2015-02-14 */
+/* ng-infinite-scroll - v1.2.0 - 2015-04-16 */
 var mod;
 
 mod = angular.module('infinite-scroll', []);
@@ -6,7 +6,7 @@ mod = angular.module('infinite-scroll', []);
 mod.value('THROTTLE_MILLISECONDS', null);
 
 mod.directive('infiniteScroll', [
-  '$rootScope', '$window', '$interval', 'THROTTLE_MILLISECONDS', function($rootScope, $window, $interval, THROTTLE_MILLISECONDS) {
+  '$rootScope', '$window', '$interval', '$timeout', 'THROTTLE_MILLISECONDS', function($rootScope, $window, $interval, $timeout, THROTTLE_MILLISECONDS) {
     return {
       scope: {
         infiniteScroll: '&',
@@ -17,13 +17,15 @@ mod.directive('infiniteScroll', [
         infiniteScrollListenForEvent: '@'
       },
       link: function(scope, elem, attrs) {
-        var changeContainer, checkWhenEnabled, container, handleInfiniteScrollContainer, handleInfiniteScrollDisabled, handleInfiniteScrollDistance, handleInfiniteScrollUseDocumentBottom, handler, height, immediateCheck, offsetTop, pageYOffset, scrollDistance, scrollEnabled, throttle, unregisterEventListener, useDocumentBottom, windowElement;
+        var changeContainer, checkWhenEnabled, container, handleInfiniteScrollContainer, handleInfiniteScrollDisabled, handleInfiniteScrollDistance, handleInfiniteScrollUseDocumentBottom, handler, height, immediateCheck, immediateCheckFinished, immediateCheckUntilEnd, makeImmediateCheck, offsetTop, pageYOffset, scrollDistance, scrollEnabled, throttle, unregisterEventListener, useDocumentBottom, windowElement;
         windowElement = angular.element($window);
         scrollDistance = null;
         scrollEnabled = null;
         checkWhenEnabled = null;
         container = null;
         immediateCheck = true;
+        immediateCheckUntilEnd = false;
+        immediateCheckFinished = false;
         useDocumentBottom = false;
         unregisterEventListener = null;
         height = function(elem) {
@@ -76,6 +78,9 @@ mod.directive('infiniteScroll', [
               }
             }
           } else {
+            if (immediateCheck && !immediateCheckFinished) {
+              immediateCheckFinished = true;
+            }
             return checkWhenEnabled = false;
           }
         };
@@ -175,11 +180,18 @@ mod.directive('infiniteScroll', [
         if (attrs.infiniteScrollImmediateCheck != null) {
           immediateCheck = scope.$eval(attrs.infiniteScrollImmediateCheck);
         }
-        return $interval((function() {
-          if (immediateCheck) {
-            return handler();
+        if (attrs.infiniteScrollImmediateCheckUntilEnd != null) {
+          immediateCheckUntilEnd = true;
+        }
+        makeImmediateCheck = function() {
+          if (immediateCheck && !immediateCheckFinished) {
+            handler();
+            if (immediateCheckUntilEnd) {
+              return $timeout(makeImmediateCheck, 0);
+            }
           }
-        }), 0, 1);
+        };
+        return $timeout(makeImmediateCheck, 0);
       }
     };
   }
