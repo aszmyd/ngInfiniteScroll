@@ -1,4 +1,4 @@
-/* ng-infinite-scroll - v1.2.0 - 2015-04-16 */
+/* ng-infinite-scroll - v1.2.0 - 2015-04-17 */
 var mod;
 
 mod = angular.module('infinite-scroll', []);
@@ -186,7 +186,7 @@ mod.directive('infiniteScroll', [
         makeImmediateCheck = function() {
           if (immediateCheck && !immediateCheckFinished) {
             handler();
-            if (immediateCheckUntilEnd) {
+            if (scrollEnabled && immediateCheckUntilEnd) {
               return $timeout(makeImmediateCheck, 0);
             }
           }

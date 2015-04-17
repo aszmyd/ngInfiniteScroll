@@ -211,7 +211,7 @@ mod.directive 'infiniteScroll', ['$rootScope', '$window', '$interval', '$timeout
     makeImmediateCheck = ->
       if immediateCheck && !immediateCheckFinished
         handler()
-        if immediateCheckUntilEnd
+        if scrollEnabled && immediateCheckUntilEnd
           $timeout(makeImmediateCheck, 0)
     
     $timeout(makeImmediateCheck, 0)
