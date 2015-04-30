@@ -75,6 +75,7 @@ mod.directive 'infiniteScroll', ['$rootScope', '$window', '$interval', '$timeout
       else
         if immediateCheck && !immediateCheckFinished
           immediateCheckFinished = true
+          $rootScope.$broadcast('INFINITE_SCROLL_IMMEDIATE_CHECK_FINISHED', scope.infiniteScrollContainer)
         checkWhenEnabled = false
 
     # The optional THROTTLE_MILLISECONDS configuration value specifies
@@ -199,6 +200,8 @@ mod.directive 'infiniteScroll', ['$rootScope', '$window', '$interval', '$timeout
     # infinte-scoll-immediate-check sets whether or not run the
     # expression passed on infinite-scroll for the first time when the
     # directive first loads, before any actual scroll.
+    # when immediate check is finished, event 'INFINITE_SCROLL_IMMEDIATE_CHECK_FINISHED'
+    # is broadcasted with infiniteScrollContainer as a paremeter
     if attrs.infiniteScrollImmediateCheck?
       immediateCheck = scope.$eval(attrs.infiniteScrollImmediateCheck)
 

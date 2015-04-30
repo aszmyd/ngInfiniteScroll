@@ -1,4 +1,4 @@
-/* ng-infinite-scroll - v1.2.0 - 2015-04-17 */
+/* ng-infinite-scroll - v1.2.0 - 2015-04-30 */
 var mod;
 
 mod = angular.module('infinite-scroll', []);
@@ -80,6 +80,7 @@ mod.directive('infiniteScroll', [
           } else {
             if (immediateCheck && !immediateCheckFinished) {
               immediateCheckFinished = true;
+              $rootScope.$broadcast('INFINITE_SCROLL_IMMEDIATE_CHECK_FINISHED', scope.infiniteScrollContainer);
             }
             return checkWhenEnabled = false;
           }
