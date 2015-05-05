@@ -21,7 +21,6 @@ mod.directive 'infiniteScroll', ['$rootScope', '$window', '$interval', '$timeout
     container = null
     immediateCheck = true
     immediateCheckUntilEnd = false
-    immediateCheckFinished = false
     checkUntilEndFinished = false
     useDocumentBottom = false
     unregisterEventListener = null
