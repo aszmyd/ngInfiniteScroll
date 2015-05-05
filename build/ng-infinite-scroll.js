@@ -1,4 +1,4 @@
-/* ng-infinite-scroll - v1.2.0 - 2015-04-30 */
+/* ng-infinite-scroll - v1.2.0 - 2015-05-05 */
 var mod;
 
 mod = angular.module('infinite-scroll', []);
@@ -17,7 +17,7 @@ mod.directive('infiniteScroll', [
         infiniteScrollListenForEvent: '@'
       },
       link: function(scope, elem, attrs) {
-        var changeContainer, checkWhenEnabled, container, handleInfiniteScrollContainer, handleInfiniteScrollDisabled, handleInfiniteScrollDistance, handleInfiniteScrollUseDocumentBottom, handler, height, immediateCheck, immediateCheckFinished, immediateCheckUntilEnd, makeImmediateCheck, offsetTop, pageYOffset, scrollDistance, scrollEnabled, throttle, unregisterEventListener, useDocumentBottom, windowElement;
+        var changeContainer, checkUntilEnd, checkUntilEndFinished, checkUntilEndRecursive, checkWhenEnabled, container, handleInfiniteScrollContainer, handleInfiniteScrollDisabled, handleInfiniteScrollDistance, handleInfiniteScrollUseDocumentBottom, handler, handlerHelper, height, immediateCheck, immediateCheckFinished, immediateCheckUntilEnd, makeImmediateCheck, offsetTop, pageYOffset, scrollDistance, scrollEnabled, throttle, unregisterEventListener, useDocumentBottom, windowElement;
         windowElement = angular.element($window);
         scrollDistance = null;
         scrollEnabled = null;
@@ -26,6 +26,7 @@ mod.directive('infiniteScroll', [
         immediateCheck = true;
         immediateCheckUntilEnd = false;
         immediateCheckFinished = false;
+        checkUntilEndFinished = false;
         useDocumentBottom = false;
         unregisterEventListener = null;
         height = function(elem) {
@@ -50,7 +51,7 @@ mod.directive('infiniteScroll', [
             return elem.ownerDocument.defaultView.pageYOffset;
           }
         };
-        handler = function() {
+        handlerHelper = function() {
           var containerBottom, containerTopOffset, elementBottom, remaining, shouldScroll;
           if (container === windowElement) {
             containerBottom = height(container) + pageYOffset(container[0].document.documentElement);
@@ -78,13 +79,19 @@ mod.directive('infiniteScroll', [
               }
             }
           } else {
-            if (immediateCheck && !immediateCheckFinished) {
-              immediateCheckFinished = true;
-              $rootScope.$broadcast('INFINITE_SCROLL_IMMEDIATE_CHECK_FINISHED', scope.infiniteScrollContainer);
-            }
+            checkUntilEndFinished = true;
+            $rootScope.$broadcast('INFINITE_SCROLL_CHECK_FINISHED', scope.infiniteScrollContainer);
             return checkWhenEnabled = false;
           }
         };
+        handler = function() {
+          return checkUntilEnd();
+        };
+        scope.$on('INFINITE_SCROLL_MAKE_CHECK', function(event, containerToMakeCheck) {
+          if (containerToMakeCheck === scope.infiniteScrollContainer) {
+            return handler();
+          }
+        });
         throttle = function(func, wait) {
           var later, previous, timeout;
           timeout = null;
@@ -184,12 +191,19 @@ mod.directive('infiniteScroll', [
         if (attrs.infiniteScrollImmediateCheckUntilEnd != null) {
           immediateCheckUntilEnd = true;
         }
+        checkUntilEndRecursive = function() {
+          if (scrollEnabled && !checkUntilEndFinished) {
+            handlerHelper();
+            return $timeout(checkUntilEndRecursive, 0);
+          }
+        };
+        checkUntilEnd = function() {
+          checkUntilEndFinished = false;
+          return checkUntilEndRecursive();
+        };
         makeImmediateCheck = function() {
-          if (immediateCheck && !immediateCheckFinished) {
-            handler();
-            if (scrollEnabled && immediateCheckUntilEnd) {
-              return $timeout(makeImmediateCheck, 0);
-            }
+          if (immediateCheck) {
+            return checkUntilEnd();
           }
         };
         return $timeout(makeImmediateCheck, 0);

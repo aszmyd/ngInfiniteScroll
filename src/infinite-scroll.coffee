@@ -22,6 +22,7 @@ mod.directive 'infiniteScroll', ['$rootScope', '$window', '$interval', '$timeout
     immediateCheck = true
     immediateCheckUntilEnd = false
     immediateCheckFinished = false
+    checkUntilEndFinished = false
     useDocumentBottom = false
     unregisterEventListener = null
 
@@ -47,7 +48,7 @@ mod.directive 'infiniteScroll', ['$rootScope', '$window', '$interval', '$timeout
     # document. It is recommended to use infinite-scroll-disabled
     # with a boolean that is set to true when the function is
     # called in order to throttle the function call.
-    handler = ->
+    handlerHelper = ->
       if container == windowElement
         containerBottom = height(container) + pageYOffset(container[0].document.documentElement)
         elementBottom = offsetTop(elem) + height(elem)
@@ -73,10 +74,15 @@ mod.directive 'infiniteScroll', ['$rootScope', '$window', '$interval', '$timeout
           else
             scope.$apply(scope.infiniteScroll)
       else
-        if immediateCheck && !immediateCheckFinished
-          immediateCheckFinished = true
-          $rootScope.$broadcast('INFINITE_SCROLL_IMMEDIATE_CHECK_FINISHED', scope.infiniteScrollContainer)
+        checkUntilEndFinished = true
+        $rootScope.$broadcast('INFINITE_SCROLL_CHECK_FINISHED', scope.infiniteScrollContainer)
         checkWhenEnabled = false
+    handler = ->
+      checkUntilEnd()
+    scope.$on('INFINITE_SCROLL_MAKE_CHECK', (event, containerToMakeCheck) ->
+      if containerToMakeCheck == scope.infiniteScrollContainer
+        handler()
+    )
 
     # The optional THROTTLE_MILLISECONDS configuration value specifies
     # a minimum time that should elapse between each call to the
@@ -210,12 +216,19 @@ mod.directive 'infiniteScroll', ['$rootScope', '$window', '$interval', '$timeout
     # Note that this works only when infinte-scoll-immediate-check is set to true
     if attrs.infiniteScrollImmediateCheckUntilEnd?
       immediateCheckUntilEnd = true
+      
+    checkUntilEndRecursive = ->
+      if scrollEnabled && !checkUntilEndFinished
+        handlerHelper()
+        $timeout(checkUntilEndRecursive, 0)
+
+    checkUntilEnd = ->
+      checkUntilEndFinished = false
+      checkUntilEndRecursive()
 
     makeImmediateCheck = ->
-      if immediateCheck && !immediateCheckFinished
-        handler()
-        if scrollEnabled && immediateCheckUntilEnd
-          $timeout(makeImmediateCheck, 0)
+      if immediateCheck
+        checkUntilEnd()
     
     $timeout(makeImmediateCheck, 0)
 ]
